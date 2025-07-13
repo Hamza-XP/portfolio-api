@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-white text-black">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ about.name }} | DevOps Portfolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="p-6 max-w-4xl mx-auto font-sans">
+  <header class="mb-8">
+    <h1 class="text-4xl font-bold">{{ about.name }}</h1>
+    <p class="text-lg">{{ about.title }} – {{ about.location }}</p>
+    <p class="text-sm text-gray-600">{{ about.bio }}</p>
+    <div class="mt-2">
+      <a href="mailto:{{ about.email }}" class="text-blue-600">Email</a> |
+      <a href="{{ about.github }}" class="text-blue-600">GitHub</a> |
+      <a href="{{ about.linkedin }}" class="text-blue-600">LinkedIn</a>
+    </div>
+  </header>
+
+  <section class="mb-8">
+    <h2 class="text-2xl font-semibold">Skills</h2>
+    {% for category, items in skills.items() %}
+    <div class="my-2">
+      <h3 class="font-medium capitalize">{{ category.replace("_", " ") }}</h3>
+      <div class="flex flex-wrap gap-2">
+        {% for skill in items %}
+        <span class="bg-gray-200 px-2 py-1 rounded text-sm">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="mb-8">
+    <h2 class="text-2xl font-semibold">Projects</h2>
+    {% for project in projects %}
+    <div class="border p-4 my-2 rounded shadow">
+      <h3 class="text-lg font-bold">{{ project.name }}</h3>
+      <p class="text-sm">{{ project.description }}</p>
+      <p class="text-sm text-gray-500">{{ ", ".join(project.technologies) }}</p>
+      <a href="{{ project.url }}" class="text-blue-600" target="_blank">GitHub →</a>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="mb-8">
+    <h2 class="text-2xl font-semibold">Education</h2>
+    {% for edu in education %}
+    <div class="my-2">
+      <h3 class="font-bold">{{ edu.degree }}</h3>
+      <p>{{ edu.institution }} — {{ edu.year }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-semibold">Certifications</h2>
+    {% for cert in certifications %}
+    <div class="my-2">
+      <h3 class="font-bold">{{ cert.name }}</h3>
+      <p class="text-sm">{{ cert.description }}</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <footer class="mt-12 text-center text-sm text-gray-500">
+    &copy; 2025 Hamza Qureshi
+  </footer>
+</body>
+</html>
