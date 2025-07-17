@@ -2,27 +2,43 @@ version: "3.9"
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: portfolio-api
+    restart: always
     expose:
       - "8000"
-    restart: always
     networks:
       - web
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   nginx:
     image: nginx:latest
-    container_name: nginx-proxy
+    container_name: nginx-reverse-proxy
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - ./nginx/html:/var/www/html
     depends_on:
       - api
     restart: always
     networks:
       - web
 
+volumes:
+  certbot-etc:
+  certbot-var:
+
 networks:
   web:
     driver: bridge
+
