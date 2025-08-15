@@ -1,46 +1,52 @@
 about = {
     "name": "Hamza Qureshi",
-    "title": "DevOps Engineer in Training",
+    "title": "DevOps Engineer",
     "location": "Model Town, Lahore, Punjab, Pakistan",
     "email": "ih20gt@gmail.com",
     "github": "https://github.com/Hamza-XP",
-    "linkedin": "https://linkedin.com/in/hamzaqureshi",
-    "bio": "Computer Science undergraduate with focused experience in DevOps, automation, and cloud infrastructure. Skilled in building production-ready systems using Docker, CI/CD, and AWS. Seeking to help companies automate and scale their deployments with modern tooling."
+    "linkedin": "https://linkedin.com/in/hamza-xp",
+    "bio": "DevOps engineer specializing in automation, cloud infrastructure, and CI/CD pipelines. Experienced in delivering production-ready systems with Docker, AWS, and modern deployment practices. Passionate about helping businesses automate, scale, and secure their operations."
 }
 
 skills = {
-    "devops_cloud": ["Docker", "Docker Compose", "CI/CD (GitHub Actions)", "Linux (Ubuntu/Debian)", "Git", "Kubernetes (basic)", "AWS EC2", "AWS S3"],
-    "scripting": ["Python", "Bash", "Shell scripting"],
-    "networking_telecom": ["TCP/IP", "SIP (basic)", "SMPP (basic)", "VoIP"],
+    "devops_cloud": ["Docker", "Docker Compose", "Terraform", "Ansible", "Kubernetes (basic)", "CI/CD (GitHub Actions)", "Linux (Ubuntu/Debian)", "Git", "AWS EC2", "AWS S3"],
     "ml_vision": ["TensorFlow", "OpenCV", "YOLOv5", "Roboflow", "REST APIs"],
+    "scripting": ["Python", "Bash", "Zsh", "Shell scripting"],
     "embedded_systems": ["Arduino", "C/C++", "NASM Assembly", "PlatformIO"],
-    "other_tools": ["GitHub", "GitLab", "VS Code", "DOSBox", "GCP (basics)"]
+    "networking_telecom": ["TCP/IP", "SIP (basic)", "SMPP (basic)", "VoIP"],
+    "other_tools": ["GitHub", "GitLab", "Jenkins", "VS Code", "DOSBox", "GCP (basics)"]
 }
 
 projects = [
     {
-        "name": "Weapon Detection AI",
-        "url": "https://github.com/Hamza-XP/weapon-detection-ai",
-        "technologies": ["TensorFlow", "Python", "OpenCV", "GitHub Actions", "Docker"],
-        "description": "Containerized AI system that detects weapons in images. Integrated with CI/CD pipelines for automated build and delivery."
+        "name": "SecureVision-Proxy",
+        "url": "https://github.com/devop-collab/SecureVision-Proxy",
+        "technologies": ["Docker", "TensorFlow", "Nginx", "OpenCV", "GitHub Actions", "Prometheus"],
+        "description": "Weapon detection system that leverages TensorFlow Deep Neural Networks to provide real-time threat identification in CCTV footage and static images. Architected with DevOps practices, deployment on AWS EC2 with comprehensive monitoring, caching, and security hardening."
     },
     {
-        "name": "Autonomous Boat",
+        "name": "ansible-ec2-wordpress",
+        "url": "https://github.com/Hamza-XP/ansible-ec2-wordpress",
+        "technologies": ["Ansible", "Terraform", "WordPress", "WooCommerce", "Nginx", "PHP 8.1", "MySQL", "AWS EC2", "Certbot SSL", "GitHub Actions"],
+        "description": "Automated Wordpress WooCommerce store deployment using Ansible and Terraform. Provisions AWS EC2, sets up Nginx, PHP 8.1, MySQL, and configures HTTPS via Certbot SSL. Includes UFW, Fail2ban, SSH key authentication, idempotent modular playbooks, and GitHub Actions CI/CD."
+    },
+    {
+        "name": "portfolio-api",
+        "url": "https://github.com/Hamza-XP/portfolio-api",
+        "technologies": ["Docker", "FastAPI", "AWS EC2", "CertBot SSL", "GitHub Actions"],
+        "description": "Portfolio built with FastAPI, containerized with Docker, reverse proxied using Nginx, and deployed to AWS EC2 with HTTPS via Certbot SSL. Includes automated CI/CD pipeline using GitHub Actions."
+    },
+    {
+        "name": "TideSync: Autonomous Boat",
         "url": "https://github.com/Hamza-XP/TideSync",
         "technologies": ["Arduino", "Raspberry Pi", "GPS", "Ultrasonic Sensors"],
         "description": "Built an embedded boat navigation system using GPS and obstacle detection, coded in C++ for real-time control."
     },
     {
-        "name": "NASM Assembly Projects",
-        "url": "https://github.com/Hamza-XP",
-        "technologies": ["NASM", "x86", "DOSBox"],
-        "description": "Low-level assembly routines for memory access and computation using x86 architecture."
-    },
-    {
-        "name": "Linux Bash Automation",
-        "url": "https://github.com/Hamza-XP",
-        "technologies": ["Linux", "Bash", "Shell"],
-        "description": "Frequent use of Linux tools and Bash scripting to automate tasks in local and server environments."
+        "name": "terraform-s3-secure",
+        "url": "https://github.com/Hamza-XP/terraform-s3-secure",
+        "technologies": ["Terraform", "AWS S3", "CloudFront", "Bash", "GitHub Actions"],
+        "description": "Static Website Infrastructure on AWS S3 using Terraform, includes CloudFront for global content delivery, AWS WAF for threat protection, real-time monitoring, automated CI/CD,"
     }
 ]
 
