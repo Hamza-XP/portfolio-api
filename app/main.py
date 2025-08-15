@@ -6,8 +6,8 @@ from data import about, skills, projects, education, certifications
 
 app = FastAPI(
     title="Hamza Qureshi - Portfolio",
-    description="A simple FastAPI portfolio with HTML frontend.",
-    version="1.0.0"
+    description="Dockerized FastAPI portfolio deployed on AWS EC2 with Nginx reverse proxy, contains HTTPS via Certbot and CI/CD using GitHub Actions",
+    version="2.0.0"
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -21,7 +21,7 @@ async def index(request: Request):
         "skills": skills,
         "projects": projects,
         "education": education,
-        "certifications": certifications
+        # "certifications": certifications
     })
 
 # Optional API routes for data (if you still want endpoints)
@@ -37,5 +37,5 @@ async def get_projects(): return projects
 @app.get("/api/education")
 async def get_education(): return education
 
-@app.get("/api/certifications")
-async def get_certifications(): return certifications
+# @app.get("/api/certifications")
+# async def get_certifications(): return certifications
