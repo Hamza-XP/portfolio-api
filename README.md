@@ -4,7 +4,10 @@ A production-ready portfolio backend built with **FastAPI**, containerized with 
 
 [![Docker](https://img.shields.io/badge/Docker-20.10%2B-blue?logo=docker)](https://docker.com)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.103%2B-green?logo=fastapi)](https://fastapi.tiangolo.com)
-[![AWS](https://img.shields.io/badge/AWS-EC2-orange?logo=amazon-aws)](https://aws.amazon.com)
+[![AWS EC2](https://img.shields.io/badge/AWS-EC2-orange?logo=amazon-aws)](https://aws.amazon.com/ec2)
+[![Certbot SSL](https://img.shields.io/badge/Certbot-SSL-lightgrey?logo=letsencrypt)](https://certbot.eff.org)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automation-2088FF?logo=github-actions)](https://github.com/features/actions)
+
 
 ---
 
