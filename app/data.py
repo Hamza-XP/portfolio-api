@@ -4,18 +4,35 @@ about = {
     "location": "Model Town, Lahore, Punjab, Pakistan",
     "email": "ih20gt@gmail.com",
     "github": "https://github.com/Hamza-XP",
-    "linkedin": "https://linkedin.com/in/hamza-xp",
+    "linkedin": "https://www.linkedin.com/in/hamza-xp",
     "bio": "DevOps engineer specializing in automation, cloud infrastructure, and CI/CD pipelines. Experienced in delivering production-ready systems with Docker, AWS, and modern deployment practices. Passionate about helping businesses automate, scale, and secure their operations."
 }
 
 skills = {
-    "devops_cloud": ["Docker", "Docker Compose", "Terraform", "Ansible", "Kubernetes (basic)", "CI/CD (GitHub Actions)", "Linux (Ubuntu/Debian)", "Git", "AWS EC2", "AWS S3"],
-    "ml_vision": ["TensorFlow", "OpenCV", "YOLOv5", "Roboflow", "REST APIs"],
-    "scripting": ["Python", "Bash", "Zsh", "Shell scripting"],
-    "embedded_systems": ["Arduino", "C/C++", "NASM Assembly", "PlatformIO"],
-    "networking_telecom": ["TCP/IP", "SIP (basic)", "SMPP (basic)", "VoIP"],
-    "other_tools": ["GitHub", "GitLab", "Jenkins", "VS Code", "DOSBox", "GCP (basics)"]
+    "devops_cloud": [
+        "Docker", "Docker Compose", "Terraform", "Ansible",
+        "Kubernetes (basic)", "CI/CD (GitHub Actions)",
+        "Linux (Ubuntu/Debian)", "Git", "AWS EC2", "AWS S3"
+    ],
+    "scripting_automation": [
+        "Python", "Bash", "Shell scripting"
+    ],
+    "ml_projects": [
+        "TensorFlow", "OpenCV", "YOLOv5", "Roboflow", "REST APIs"
+    ],
+    "other_tools": [
+        "GitHub", "GitLab", "Jenkins", "VS Code", "GCP (basics)"
+    ]
 }
+
+# skills = {
+#     "devops_cloud": ["Docker", "Docker Compose", "Terraform", "Ansible", "Kubernetes (basic)", "CI/CD (GitHub Actions)", "Linux (Ubuntu/Debian)", "Git", "AWS EC2", "AWS S3"],
+#     "ml_vision": ["TensorFlow", "OpenCV", "YOLOv5", "Roboflow", "REST APIs"],
+#     "scripting": ["Python", "Bash", "Zsh", "Shell scripting"],
+#     # "embedded_systems": ["Arduino", "C/C++", "NASM Assembly", "PlatformIO"],
+#     "networking_telecom": ["TCP/IP", "SIP (basic)", "SMPP (basic)", "VoIP"],
+#     "other_tools": ["GitHub", "GitLab", "Jenkins", "VS Code", "DOSBox", "GCP (basics)"]
+# }
 
 projects = [
     {
