@@ -1,7 +1,7 @@
 about = {
     "name": "Hamza Qureshi",
     "title": "DevOps Engineer",
-    "location": "Model Town, Lahore, Punjab, Pakistan",
+    "location": "Lahore, Punjab, Pakistan",
     "email": "ih20gt@gmail.com",
     "github": "https://github.com/Hamza-XP",
     "linkedin": "https://www.linkedin.com/in/hamza-xp",
@@ -50,7 +50,7 @@ projects = [
     {
         "name": "portfolio-api",
         "url": "https://github.com/Hamza-XP/portfolio-api",
-        "technologies": ["Docker", "FastAPI", "AWS EC2", "CertBot SSL", "GitHub Actions"],
+        "technologies": ["Docker", "Terraform", "FastAPI", "AWS EC2", "CertBot SSL", "GitHub Actions"],
         "description": "Portfolio built with FastAPI, containerized with Docker, reverse proxied using Nginx, and deployed to AWS EC2 with HTTPS via Certbot SSL. Includes automated CI/CD pipeline using GitHub Actions."
     },
     {
