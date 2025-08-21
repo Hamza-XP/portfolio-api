@@ -1,0 +1,17 @@
+# Local development overrides
+version: "3.9"
+
+services:
+  fastapi:
+    volumes:
+      - ./app:/app
+    environment:
+      - DEBUG=1
+      - RELOAD=1
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "8000:8000"  # Expose directly for development
+
+  nginx:
+    ports:
+      - "8080:80"  # Use different port for development
