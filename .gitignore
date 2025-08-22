@@ -205,3 +205,36 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# TERRAFORM stuff
+
+# Local .terraform directories (provider plugins, modules cache, etc.)
+**/.terraform/*
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Variable files containing secrets
+*.tfvars
+*.tfvars.json
+
+# Override files (for local changes not shared with team)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files
+*.plan
+*.tfplan
+
+# Lock file (optional)
+# .terraform.lock.hcl 
+#   - keep this if you want reproducible provider versions in team projects
+#   - ignore it if you want fresh init each time
