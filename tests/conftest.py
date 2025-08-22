@@ -3,6 +3,9 @@ import sys
 import shutil
 from pathlib import Path
 
+# Add repo root to sys.path so "from data import ..." works
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 # Ensure repo root is on sys.path so `from app.main import app` works
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
