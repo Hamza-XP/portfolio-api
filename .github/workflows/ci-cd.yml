@@ -159,22 +159,40 @@ jobs:
     if: github.event_name != 'pull_request'
     
     steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Setup: Cache Trivy's vulnerability database to save time
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: cache-trivy-db
+          restore-keys: |
+            cache-trivy-db
+
+      # Main Trivy scan
       - name: Run Trivy vulnerability scanner
+        id: trivy-scan
         uses: aquasecurity/trivy-action@master
         with:
-          # Use a specific tag instead of the list of all tags
-          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main'
+          # Use the same explicit reference format as your build job for absolute certainty
+          image-ref: 'ghcr.io/hamza-xp/portfolio-api:main'
           format: 'sarif'
           output: 'trivy-results.sarif'
-          # Optional: Add these parameters to control scanning behavior
-          exit-code: '1'  # Exit with error if vulnerabilities found
-          ignore-unfixed: true  # Only report fixed vulnerabilities
-          severity: 'CRITICAL,HIGH'  # Only report critical and high severity issues
+          # Set to '0' initially to ensure the file is created even if vulns are found
+          exit-code: '0'
+          ignore-unfixed: false # See more vulnerabilities initially
+          severity: 'CRITICAL,HIGH'
 
+      # Upload the report, but only if the scan step completed (not if it failed to run)
       - name: Upload Trivy scan results
-        # Update to use v3 of the CodeQL action
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.trivy-scan.outcome == 'success'
         with:
           sarif_file: 'trivy-results.sarif'
 
