@@ -3,23 +3,30 @@ import sys
 import shutil
 from pathlib import Path
 
-# Add repo root to sys.path so "from data import ..." works
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# Ensure repo root is on sys.path so `from app.main import app` works
+# --- Repo root setup ---
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# Ensure repo root is on sys.path (so `from app.main import app` works)
 sys.path.insert(0, str(REPO_ROOT))
 
+# --- Fix import for `data` ---
+# Your app expects `from data import ...`, but actually it's in `app/data.py`.
+try:
+    import app.data as _data
+    sys.modules["data"] = _data
+except ImportError:
+    pass
+
+# --- Ensure static/templates exist for tests (copy or symlink) ---
 def ensure_link_or_copy(dst_name: str, src_rel: str):
     dst = REPO_ROOT / dst_name
     src = REPO_ROOT / src_rel
     if dst.exists():
         return
-    dst_parent = dst.parent
-    dst_parent.mkdir(parents=True, exist_ok=True)
+    dst.parent.mkdir(parents=True, exist_ok=True)
 
-    # Try to symlink first (works on Linux runners)
     try:
+        # Try symlink (works on Linux/GitHub runners)
         dst.symlink_to(src, target_is_directory=src.is_dir())
         return
     except Exception:
@@ -31,6 +38,5 @@ def ensure_link_or_copy(dst_name: str, src_rel: str):
     else:
         shutil.copy2(src, dst)
 
-# Your app mounts/loads these relative to CWD
 ensure_link_or_copy("static", "app/static")
 ensure_link_or_copy("templates", "app/templates")
