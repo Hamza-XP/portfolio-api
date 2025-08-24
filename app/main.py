@@ -7,7 +7,7 @@ from data import about, skills, projects, education # certifications
 app = FastAPI(
     title="Hamza Qureshi - Portfolio",
     description="Dockerized FastAPI portfolio deployed on AWS EC2 with Nginx reverse proxy, contains HTTPS via Certbot and CI/CD using GitHub Actions",
-    version="2.0.0"
+    version="2.1.0"
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -24,7 +24,12 @@ async def index(request: Request):
         # "certifications": certifications
     })
 
-# Optional API routes for data (if you still want endpoints)
+# add Healthcheck endpoint for nginx, docker and k8s
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# API routes for data 
 @app.get("/api/about")
 async def get_about(): return about
 
