@@ -162,15 +162,22 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build.outputs.image-tag }}
+          # Use a specific tag instead of the list of all tags
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          # Optional: Add these parameters to control scanning behavior
+          exit-code: '1'  # Exit with error if vulnerabilities found
+          ignore-unfixed: true  # Only report fixed vulnerabilities
+          severity: 'CRITICAL,HIGH'  # Only report critical and high severity issues
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        # Update to use v3 of the CodeQL action
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+
 
   # Job 5: Integration Tests
   integration-test:
