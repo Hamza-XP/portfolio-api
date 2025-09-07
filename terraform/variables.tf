@@ -57,13 +57,31 @@ variable "memory" {
 }
 
 variable "domain_name" {
-  description = "Domain name for the application"
+  description = "Domain name for the application (e.g., hamza-qureshi.duckdns.org)"
   type        = string
   default     = ""
 }
 
-variable "certificate_arn" {
-  description = "SSL certificate ARN"
+variable "domain_zone" {
+  description = "Route53 hosted zone for the domain (e.g., duckdns.org)"
   type        = string
   default     = ""
+}
+
+variable "enable_ipv6" {
+  description = "Enable IPv6 support for ALB and Route53"
+  type        = bool
+  default     = false
+}
+
+variable "enable_ssl" {
+  description = "Enable SSL/HTTPS with ACM certificate"
+  type        = bool
+  default     = false
+}
+
+variable "ssl_policy" {
+  description = "SSL policy for ALB HTTPS listener"
+  type        = string
+  default     = "ELBSecurityPolicy-TLS-1-2-2017-01"
 }
