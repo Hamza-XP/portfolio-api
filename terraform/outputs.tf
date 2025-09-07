@@ -1,3 +1,4 @@
+# terraform/outputs.tf
 output "vpc_id" {
   description = "ID of the VPC"
   value       = aws_vpc.main.id
@@ -40,7 +41,22 @@ output "ecs_service_name" {
 
 output "application_url" {
   description = "URL of the application"
-  value       = "http://${aws_lb.main.dns_name}"
+  value       = var.enable_ssl && var.domain_name != "" ? "https://${var.domain_name}" : "http://${aws_lb.main.dns_name}"
+}
+
+output "ssl_certificate_arn" {
+  description = "ARN of the SSL certificate"
+  value       = var.enable_ssl && var.domain_name != "" ? aws_acm_certificate.main[0].arn : null
+}
+
+output "dns_zone_id" {
+  description = "Route53 hosted zone ID"
+  value       = var.domain_name != "" ? data.aws_route53_zone.main[0].zone_id : null
+}
+
+output "ssl_certificate_status" {
+  description = "Status of the SSL certificate"
+  value       = var.enable_ssl && var.domain_name != "" ? aws_acm_certificate.main[0].status : "disabled"
 }
 
 output "cloudwatch_log_group" {
