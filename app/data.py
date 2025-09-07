@@ -50,7 +50,7 @@ projects = [
     {
         "name": "portfolio-api",
         "url": "https://github.com/Hamza-XP/portfolio-api",
-        "technologies": ["Docker", "Terraform", "FastAPI", "AWS EC2", "ACM SSL", "Nginx" "GitHub Actions"],
+        "technologies": ["Docker", "Terraform", "FastAPI", "AWS EC2", "ACM SSL", "Nginx", "GitHub Actions"],
         "description": "Portfolio built with FastAPI, containerized with Docker, reverse proxied using Nginx, and deployed to AWS EC2 with Application Load Balancer with ACM-managed SSL certificates. Provisioned with Terraform and CI/CD automated via GitHub Actions."
     },
     {
