@@ -274,7 +274,14 @@ jobs:
       - name: Set image tag
         id: image-tag
         run: |
-          echo "image_tag=${{ needs.build.outputs.image-tag }}" >> $GITHUB_OUTPUT
+          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+          echo "Using image tag: $IMAGE_TAG"
+          {
+            echo 'image_tag<<EOF'
+            echo "$IMAGE_TAG"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
 
       - name: Terraform Init
         working-directory: terraform
@@ -401,7 +408,14 @@ jobs:
       - name: Set image tag
         id: image-tag
         run: |
-          echo "image_tag=${{ needs.build.outputs.image-tag }}" >> $GITHUB_OUTPUT
+          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+          echo "Using image tag: $IMAGE_TAG"
+          {
+            echo 'image_tag<<EOF'
+            echo "$IMAGE_TAG"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
 
       - name: Terraform Init
         working-directory: terraform
