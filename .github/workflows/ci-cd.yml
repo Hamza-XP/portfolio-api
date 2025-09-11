@@ -325,7 +325,7 @@ jobs:
           fi
 
       - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-plan-staging
           path: |
@@ -452,7 +452,7 @@ jobs:
           fi
 
       - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-plan-production
           path: |
