@@ -10,7 +10,7 @@ psutil==5.9.6
 
 # Development and testing
 pytest==7.4.3
-pytest-asyncio==0.21.1
+pytest-asyncio==1.2.0
 pytest-cov==4.1.0
 httpx==0.25.2
 
