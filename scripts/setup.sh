@@ -36,7 +36,8 @@ if ! aws sts get-caller-identity > /dev/null 2>&1; then
 fi
 
 # Create S3 bucket for Terraform state
-BUCKET_NAME="terraform-state-$(date +%s)-$(whoami)"
+# BUCKET_NAME="terraform-state-$(date +%s)-$(whoami)"
+BUCKET_NAME="portfolio-state-bucket"
 echo "🪣 Creating S3 bucket for Terraform state: $BUCKET_NAME"
 
 aws s3 mb "s3://$BUCKET_NAME" || echo "Bucket might already exist"
@@ -45,8 +46,8 @@ aws s3api put-bucket-versioning \
     --versioning-configuration Status=Enabled
 
 # Update backend configuration files
-sed -i "s/your-terraform-state-bucket/$BUCKET_NAME/g" terraform/backend-config/*.hcl
-sed -i "s/your-terraform-state-bucket/$BUCKET_NAME/g" terraform/main.tf
+sed -i "s/portfolio-state-bucket/$BUCKET_NAME/g" terraform/backend-config/*.hcl
+sed -i "s/portfolio-state-bucket/$BUCKET_NAME/g" terraform/main.tf
 
 echo "✅ Setup completed!"
 echo "📝 Next steps:"

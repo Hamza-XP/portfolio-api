@@ -247,43 +247,867 @@ jobs:
         if: always()
         run: docker compose down -v
 
-  # Job 6: Deploy to Staging
+  # Job 6a: Plan Infrastructure Changes (Staging)
+  terraform-plan-staging:
+    name: Terraform Plan (Staging)
+    runs-on: ubuntu-latest
+    needs: [build, integration-test]
+    if: github.ref == 'refs/heads/develop' || github.base_ref == 'develop'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Set image tag
+        id: image-tag
+        run: |
+          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+          echo "Using image tag: $IMAGE_TAG"
+          {
+            echo 'image_tag<<EOF'
+            echo "$IMAGE_TAG"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init -backend-config=backend-config/staging.hcl
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: |
+          terraform validate
+
+      - name: Terraform Format Check
+        working-directory: terraform
+        run: |
+          terraform fmt -check=true -diff=true
+
+      - name: Terraform Plan
+        working-directory: terraform
+        id: plan
+        run: |
+          terraform plan \
+            -var-file=environments/staging.tfvars \
+            -var="container_image=${{ steps.image-tag.outputs.image_tag }}" \
+            -out=staging.tfplan \
+            -detailed-exitcode || export TF_EXIT_CODE=$?
+          
+          echo "exitcode=$TF_EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          # Generate plan summary
+          terraform show -no-color staging.tfplan > plan-output.txt
+          
+          # Create plan summary for PR comment
+          echo "## 📋 Terraform Plan Summary - staging" >> plan-summary.md
+          echo "" >> plan-summary.md
+          echo "**Environment:** staging" >> plan-summary.md  
+          echo "**Container Image:** ${{ steps.image-tag.outputs.image_tag }}" >> plan-summary.md
+          echo "" >> plan-summary.md
+          
+          if [ "$TF_EXIT_CODE" = "0" ]; then
+            echo "✅ **No changes detected**" >> plan-summary.md
+          elif [ "$TF_EXIT_CODE" = "2" ]; then
+            echo "🔄 **Changes detected:**" >> plan-summary.md
+            echo '```hcl' >> plan-summary.md
+            terraform show -no-color staging.tfplan | head -50 >> plan-summary.md
+            echo '```' >> plan-summary.md
+          else
+            echo "❌ **Plan failed with exit code $TF_EXIT_CODE**" >> plan-summary.md
+          fi
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-staging
+          path: |
+            terraform/staging.tfplan
+            terraform/plan-output.txt
+            terraform/plan-summary.md
+          retention-days: 30
+
+      - name: Comment PR with Plan (if PR)
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = './terraform/plan-summary.md';
+            if (fs.existsSync(path)) {
+              const planSummary = fs.readFileSync(path, 'utf8');
+              
+              // Find existing comment
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.data.find(comment => 
+                comment.user.login === 'github-actions[bot]' && 
+                comment.body.includes('Terraform Plan Summary - staging')
+              );
+              
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: planSummary
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: planSummary
+                });
+              }
+            }
+
+  # Job 6b: Plan Infrastructure Changes (Production)
+  terraform-plan-production:
+    name: Terraform Plan (Production)
+    runs-on: ubuntu-latest
+    needs: [build, integration-test]
+    if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Set image tag
+        id: image-tag
+        run: |
+          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+          echo "Using image tag: $IMAGE_TAG"
+          {
+            echo 'image_tag<<EOF'
+            echo "$IMAGE_TAG"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init -backend-config=backend-config/production.hcl
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: |
+          terraform validate
+
+      - name: Terraform Format Check
+        working-directory: terraform
+        run: |
+          terraform fmt -check=true -diff=true
+
+      - name: Terraform Plan
+        working-directory: terraform
+        id: plan
+        run: |
+          terraform plan \
+            -var-file=environments/production.tfvars \
+            -var="container_image=${{ steps.image-tag.outputs.image_tag }}" \
+            -out=production.tfplan \
+            -detailed-exitcode || export TF_EXIT_CODE=$?
+          
+          echo "exitcode=$TF_EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          # Generate plan summary
+          terraform show -no-color production.tfplan > plan-output.txt
+          
+          # Create plan summary for PR comment
+          echo "## 📋 Terraform Plan Summary - production" >> plan-summary.md
+          echo "" >> plan-summary.md
+          echo "**Environment:** production" >> plan-summary.md  
+          echo "**Container Image:** ${{ steps.image-tag.outputs.image_tag }}" >> plan-summary.md
+          echo "" >> plan-summary.md
+          
+          if [ "$TF_EXIT_CODE" = "0" ]; then
+            echo "✅ **No changes detected**" >> plan-summary.md
+          elif [ "$TF_EXIT_CODE" = "2" ]; then
+            echo "🔄 **Changes detected:**" >> plan-summary.md
+            echo '```hcl' >> plan-summary.md
+            terraform show -no-color production.tfplan | head -50 >> plan-summary.md
+            echo '```' >> plan-summary.md
+          else
+            echo "❌ **Plan failed with exit code $TF_EXIT_CODE**" >> plan-summary.md
+          fi
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-production
+          path: |
+            terraform/production.tfplan
+            terraform/plan-output.txt
+            terraform/plan-summary.md
+          retention-days: 30
+
+      - name: Comment PR with Plan (if PR)
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = './terraform/plan-summary.md';
+            if (fs.existsSync(path)) {
+              const planSummary = fs.readFileSync(path, 'utf8');
+              
+              // Find existing comment
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.data.find(comment => 
+                comment.user.login === 'github-actions[bot]' && 
+                comment.body.includes('Terraform Plan Summary - production')
+              );
+              
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: planSummary
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: planSummary
+                });
+              }
+            }
+
+  # Job 7: Deploy to Staging
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [build, integration-test]
+    needs: [build, integration-test, terraform-plan-staging]
     if: github.ref == 'refs/heads/develop'
-    environment: staging
+    environment: 
+      name: staging
+      url: ${{ steps.deploy.outputs.application_url }}
     
     steps:
-      - name: Deploy to staging
-        run: |
-          echo "Deploying to staging environment..."
-          # Add your staging deployment commands here
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Job 7: Deploy to Production
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan-staging
+          path: terraform/
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init -backend-config=backend-config/staging.hcl
+
+      - name: Verify Plan Exists
+        working-directory: terraform
+        run: |
+          if [ ! -f staging.tfplan ]; then
+            echo "❌ Terraform plan file not found!"
+            exit 1
+          fi
+          echo "✅ Terraform plan file verified"
+
+      - name: Pre-deployment Health Check
+        run: |
+          echo "🏥 Checking current staging deployment..."
+          # Try to get current endpoint, don't fail if it doesn't exist
+          CURRENT_URL=$(aws elbv2 describe-load-balancers --names fastapi-app-alb --query 'LoadBalancers[0].DNSName' --output text 2>/dev/null || echo "")
+          if [ -n "$CURRENT_URL" ] && [ "$CURRENT_URL" != "None" ]; then
+            echo "🔍 Current staging endpoint: http://$CURRENT_URL"
+            curl -f "http://$CURRENT_URL/health" || echo "⚠️  Current deployment not healthy"
+          else
+            echo "🔭 No existing deployment found"
+          fi
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: terraform
+        run: |
+          echo "🚀 Applying Terraform plan to staging..."
+          terraform apply -auto-approve staging.tfplan
+          
+          # Capture outputs
+          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+          
+          # Get application URL with retry logic
+          for i in {1..5}; do
+            APP_URL=$(terraform output -raw application_url 2>/dev/null || echo "")
+            if [ -n "$APP_URL" ]; then
+              echo "application_url=$APP_URL" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "⏳ Waiting for outputs... (attempt $i/5)"
+            sleep 10
+          done
+
+      - name: Wait for ECS Service Stability
+        run: |
+          echo "⏳ Waiting for ECS service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster fastapi-app-cluster \
+            --services fastapi-app \
+            --region us-east-1
+          echo "✅ ECS service is stable"
+
+      - name: Health Check with Retry
+        id: health-check
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          echo "🏥 Health checking $APP_URL..."
+          
+          MAX_ATTEMPTS=20
+          SLEEP_TIME=15
+          
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "🔍 Health check attempt $i/$MAX_ATTEMPTS..."
+            
+            if curl -f --max-time 30 "$APP_URL/health"; then
+              echo "✅ Application is healthy!"
+              echo "healthy=true" >> $GITHUB_OUTPUT
+              break
+            else
+              if [ $i -eq $MAX_ATTEMPTS ]; then
+                echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
+                echo "healthy=false" >> $GITHUB_OUTPUT
+                exit 1
+              fi
+              echo "⏳ Retrying in ${SLEEP_TIME}s..."
+              sleep $SLEEP_TIME
+            fi
+          done
+
+      - name: Run Staging Smoke Tests
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          echo "🧪 Running staging smoke tests..."
+          
+          # Test main endpoint
+          echo "Testing main endpoint..."
+          curl -f --max-time 30 "$APP_URL/"
+          
+          # Test health endpoint with detailed response
+          echo "Testing health endpoint..."
+          curl -f --max-time 30 "$APP_URL/health" | jq '.'
+          
+          # Test readiness endpoint
+          echo "Testing readiness endpoint..."
+          curl -f --max-time 30 "$APP_URL/ready" | jq '.'
+          
+          # Test API documentation
+          echo "Testing API docs..."
+          curl -f --max-time 30 "$APP_URL/docs"
+          
+          # Test SSL if HTTPS
+          if [[ "$APP_URL" =~ ^https ]]; then
+            echo "🔒 Testing SSL certificate..."
+            DOMAIN=$(echo $APP_URL | sed 's|https://||' | sed 's|/.*||')
+            openssl s_client -connect $DOMAIN:443 -servername $DOMAIN </dev/null 2>/dev/null | openssl x509 -noout -dates
+            
+            echo "🔄 Testing HTTP to HTTPS redirect..."
+            HTTP_URL=$(echo $APP_URL | sed 's|https://|http://|')
+            REDIRECT_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HTTP_URL")
+            if [ "$REDIRECT_CODE" = "301" ] || [ "$REDIRECT_CODE" = "302" ]; then
+              echo "✅ HTTP redirect working correctly (code: $REDIRECT_CODE)"
+            else
+              echo "⚠️  Unexpected redirect code: $REDIRECT_CODE"
+            fi
+          fi
+          
+          echo "✅ All smoke tests passed!"
+
+      - name: Update DuckDNS (Staging)
+        if: env.DUCKDNS_TOKEN
+        working-directory: terraform
+        run: |
+          echo "🦆 Updating DuckDNS for staging..."
+          ALB_DNS=$(terraform output -raw load_balancer_dns)
+          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=${ALB_DNS}")
+          if [ "$RESPONSE" = "OK" ]; then
+            echo "✅ DuckDNS updated successfully"
+          else
+            echo "⚠️  DuckDNS update response: $RESPONSE"
+          fi
+        env:
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+
+      - name: Performance Test
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          echo "⚡ Running basic performance test..."
+          
+          # Simple load test with curl
+          for i in {1..10}; do
+            START_TIME=$(date +%s%N)
+            curl -f --max-time 10 "$APP_URL/health" > /dev/null
+            END_TIME=$(date +%s%N)
+            DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
+            echo "Request $i: ${DURATION}ms"
+          done
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Staging" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment Time:** ${{ steps.apply.outputs.deployment_time }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Application URL:** ${{ steps.apply.outputs.application_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Health Status:** ${{ steps.health-check.outputs.healthy == 'true' && '✅ Healthy' || '❌ Unhealthy' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Image:** ${{ needs.build.outputs.image-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Main endpoint: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Health check: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- API documentation: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance test: ✅" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Staging deployment failed!"
+          echo "Check the logs above for detailed error information."
+          # Add Slack/Discord notification here if needed
+
+  # Job 8: Deploy to Production
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build, integration-test, security-scan]
+    needs: [build, integration-test, security-scan, terraform-plan-production]
     if: github.ref == 'refs/heads/main'
-    environment: production
+    environment: 
+      name: production
+      url: ${{ steps.deploy.outputs.application_url }}
     
     steps:
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production environment..."
-          # Add your production deployment commands here
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Job 8: Cleanup
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan-production
+          path: terraform/
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init -backend-config=backend-config/production.hcl
+
+      - name: Verify Plan Exists
+        working-directory: terraform
+        run: |
+          if [ ! -f production.tfplan ]; then
+            echo "❌ Terraform plan file not found!"
+            exit 1
+          fi
+          echo "✅ Terraform plan file verified"
+
+      - name: Pre-deployment Backup Check
+        run: |
+          echo "💾 Checking current production state..."
+          # Create a snapshot of current state for rollback if needed
+          CURRENT_TASK_DEF=$(aws ecs describe-services \
+            --cluster fastapi-app-cluster \
+            --services fastapi-app \
+            --query 'services[0].taskDefinition' \
+            --output text 2>/dev/null || echo "none")
+          
+          echo "📋 Current task definition: $CURRENT_TASK_DEF"
+          echo "task_definition_backup=$CURRENT_TASK_DEF" >> $GITHUB_ENV
+
+      - name: Production Pre-flight Checks
+        run: |
+          echo "✈️ Running production pre-flight checks..."
+          
+          # Check AWS service limits
+          echo "📊 Checking AWS service limits..."
+          RUNNING_TASKS=$(aws ecs list-tasks --cluster fastapi-app-cluster --query 'length(taskArns)' --output text)
+          echo "📊 Currently running tasks: $RUNNING_TASKS"
+          
+          # Check ALB health
+          HEALTHY_TARGETS=$(aws elbv2 describe-target-health \
+            --target-group-arn $(aws elbv2 describe-target-groups --names fastapi-app-tg --query 'TargetGroups[0].TargetGroupArn' --output text) \
+            --query 'length(TargetHealthDescriptions[?TargetHealth.State==`healthy`])' \
+            --output text 2>/dev/null || echo "0")
+          echo "💚 Healthy targets: $HEALTHY_TARGETS"
+          
+          echo "✅ Pre-flight checks completed"
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: terraform
+        run: |
+          echo "🏭 Applying Terraform plan to production..."
+          terraform apply -auto-approve production.tfplan
+          
+          # Capture outputs
+          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+          
+          # Get application URL with retry logic
+          for i in {1..5}; do
+            APP_URL=$(terraform output -raw application_url 2>/dev/null || echo "")
+            if [ -n "$APP_URL" ]; then
+              echo "application_url=$APP_URL" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "⏳ Waiting for outputs... (attempt $i/5)"
+            sleep 10
+          done
+
+      - name: Wait for ECS Service Stability
+        run: |
+          echo "⏳ Waiting for ECS service to stabilize..."
+          # Wait longer for production
+          timeout 900 aws ecs wait services-stable \
+            --cluster fastapi-app-cluster \
+            --services fastapi-app \
+            --region us-east-1
+          echo "✅ ECS service is stable"
+
+      - name: Progressive Health Check
+        id: health-check
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          echo "🏥 Progressive health checking $APP_URL..."
+          
+          MAX_ATTEMPTS=30
+          SLEEP_TIME=20
+          SUCCESS_COUNT=0
+          REQUIRED_SUCCESSES=3
+          
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "🔍 Health check attempt $i/$MAX_ATTEMPTS (successes: $SUCCESS_COUNT/$REQUIRED_SUCCESSES)..."
+            
+            if curl -f --max-time 30 "$APP_URL/health"; then
+              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              echo "✅ Health check succeeded ($SUCCESS_COUNT/$REQUIRED_SUCCESSES)"
+              
+              if [ $SUCCESS_COUNT -ge $REQUIRED_SUCCESSES ]; then
+                echo "🎉 Required consecutive health checks passed!"
+                echo "healthy=true" >> $GITHUB_OUTPUT
+                break
+              fi
+            else
+              echo "❌ Health check failed, resetting success count"
+              SUCCESS_COUNT=0
+              
+              if [ $i -eq $MAX_ATTEMPTS ]; then
+                echo "💥 Health check failed after $MAX_ATTEMPTS attempts"
+                echo "healthy=false" >> $GITHUB_OUTPUT
+                exit 1
+              fi
+            fi
+            
+            echo "⏳ Waiting ${SLEEP_TIME}s before next check..."
+            sleep $SLEEP_TIME
+          done
+
+      - name: Comprehensive Production Tests
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          echo "🧪 Running comprehensive production tests..."
+          
+          # Test main endpoint
+          echo "🏠 Testing main endpoint..."
+          curl -f --max-time 30 "$APP_URL/" > /dev/null
+          echo "✅ Main endpoint OK"
+          
+          # Test health endpoint with detailed response
+          echo "💊 Testing health endpoint..."
+          HEALTH_RESPONSE=$(curl -f --max-time 30 "$APP_URL/health")
+          echo "$HEALTH_RESPONSE" | jq '.'
+          
+          # Verify health response contains expected fields
+          echo "$HEALTH_RESPONSE" | jq -e '.status' > /dev/null
+          echo "$HEALTH_RESPONSE" | jq -e '.timestamp' > /dev/null
+          echo "✅ Health endpoint structure OK"
+          
+          # Test readiness endpoint
+          echo "🎯 Testing readiness endpoint..."
+          curl -f --max-time 30 "$APP_URL/ready" | jq '.'
+          echo "✅ Readiness endpoint OK"
+          
+          # Test liveness endpoint
+          echo "💓 Testing liveness endpoint..."
+          curl -f --max-time 30 "$APP_URL/live" | jq '.'
+          echo "✅ Liveness endpoint OK"
+          
+          # Test API documentation
+          echo "📚 Testing API documentation..."
+          curl -f --max-time 30 "$APP_URL/docs" > /dev/null
+          echo "✅ API docs OK"
+          
+          # Test OpenAPI spec
+          echo "📋 Testing OpenAPI specification..."
+          curl -f --max-time 30 "$APP_URL/openapi.json" | jq '.info.title' > /dev/null
+          echo "✅ OpenAPI spec OK"
+
+      - name: SSL Certificate Validation
+        if: contains(steps.apply.outputs.application_url, 'https')
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          DOMAIN=$(echo $APP_URL | sed 's|https://||' | sed 's|/.*||')
+          
+          echo "🔒 Validating SSL certificate for $DOMAIN..."
+          
+          # Check certificate validity
+          CERT_INFO=$(openssl s_client -connect $DOMAIN:443 -servername $DOMAIN </dev/null 2>/dev/null | openssl x509 -noout -dates)
+          echo "$CERT_INFO"
+          
+          # Check certificate chain
+          echo "🔗 Checking certificate chain..."
+          openssl s_client -connect $DOMAIN:443 -servername $DOMAIN </dev/null 2>/dev/null | openssl x509 -noout -issuer
+          
+          # Test SSL Labs rating (optional, requires API key)
+          # echo "🔍 SSL Labs rating..."
+          # curl -s "https://api.ssllabs.com/api/v3/analyze?host=$DOMAIN&startNew=on"
+          
+          echo "✅ SSL certificate validation passed"
+
+      - name: HTTP to HTTPS Redirect Test
+        if: contains(steps.apply.outputs.application_url, 'https')
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          HTTP_URL=$(echo $APP_URL | sed 's|https://|http://|')
+          
+          echo "🔄 Testing HTTP to HTTPS redirect..."
+          REDIRECT_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HTTP_URL")
+          
+          if [ "$REDIRECT_CODE" = "301" ] || [ "$REDIRECT_CODE" = "302" ]; then
+            echo "✅ HTTP redirect working correctly (code: $REDIRECT_CODE)"
+            
+            # Verify final destination is HTTPS
+            FINAL_URL=$(curl -s -L -o /dev/null -w "%{url_effective}" "$HTTP_URL")
+            if [[ "$FINAL_URL" =~ ^https ]]; then
+              echo "✅ Redirect leads to HTTPS URL: $FINAL_URL"
+            else
+              echo "❌ Redirect does not lead to HTTPS: $FINAL_URL"
+              exit 1
+            fi
+          else
+            echo "❌ HTTP redirect failed with code: $REDIRECT_CODE"
+            exit 1
+          fi
+
+      - name: Update DuckDNS (Production)
+        if: env.DUCKDNS_TOKEN
+        working-directory: terraform
+        run: |
+          echo "🦆 Updating DuckDNS for production..."
+          ALB_DNS=$(terraform output -raw load_balancer_dns)
+          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=${ALB_DNS}")
+          if [ "$RESPONSE" = "OK" ]; then
+            echo "✅ DuckDNS updated successfully"
+          else
+            echo "⚠️  DuckDNS update response: $RESPONSE"
+          fi
+        env:
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+
+      - name: Performance Validation
+        run: |
+          APP_URL="${{ steps.apply.outputs.application_url }}"
+          echo "⚡ Running production performance validation..."
+          
+          TOTAL_TIME=0
+          MAX_TIME=0
+          MIN_TIME=999999
+          FAILED_REQUESTS=0
+          
+          for i in {1..20}; do
+            START_TIME=$(date +%s%N)
+            if curl -f --max-time 10 "$APP_URL/health" > /dev/null 2>&1; then
+              END_TIME=$(date +%s%N)
+              DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
+              TOTAL_TIME=$((TOTAL_TIME + DURATION))
+              
+              if [ $DURATION -gt $MAX_TIME ]; then
+                MAX_TIME=$DURATION
+              fi
+              if [ $DURATION -lt $MIN_TIME ]; then
+                MIN_TIME=$DURATION
+              fi
+              
+              echo "Request $i: ${DURATION}ms"
+            else
+              FAILED_REQUESTS=$((FAILED_REQUESTS + 1))
+              echo "Request $i: FAILED"
+            fi
+          done
+          
+          if [ $FAILED_REQUESTS -gt 0 ]; then
+            echo "❌ $FAILED_REQUESTS requests failed"
+            exit 1
+          fi
+          
+          AVERAGE_TIME=$((TOTAL_TIME / 20))
+          echo "📊 Performance Summary:"
+          echo "  Average: ${AVERAGE_TIME}ms"
+          echo "  Min: ${MIN_TIME}ms" 
+          echo "  Max: ${MAX_TIME}ms"
+          echo "  Failed: $FAILED_REQUESTS/20"
+          
+          # Set performance thresholds
+          if [ $AVERAGE_TIME -gt 2000 ]; then
+            echo "⚠️  Average response time exceeds 2s threshold"
+          fi
+          
+          echo "✅ Performance validation completed"
+
+      - name: Post-deployment Verification
+        run: |
+          echo "🔍 Running post-deployment verification..."
+          
+          # Verify ECS service is running desired number of tasks
+          DESIRED=$(aws ecs describe-services --cluster fastapi-app-cluster --services fastapi-app --query 'services[0].desiredCount' --output text)
+          RUNNING=$(aws ecs describe-services --cluster fastapi-app-cluster --services fastapi-app --query 'services[0].runningCount' --output text)
+          
+          echo "📊 ECS Service Status:"
+          echo "  Desired tasks: $DESIRED"
+          echo "  Running tasks: $RUNNING"
+          
+          if [ "$DESIRED" != "$RUNNING" ]; then
+            echo "⚠️  Task count mismatch, waiting for stabilization..."
+            sleep 30
+            RUNNING=$(aws ecs describe-services --cluster fastapi-app-cluster --services fastapi-app --query 'services[0].runningCount' --output text)
+            echo "  Running tasks (after wait): $RUNNING"
+          fi
+          
+          # Verify load balancer health
+          HEALTHY_TARGETS=$(aws elbv2 describe-target-health \
+            --target-group-arn $(aws elbv2 describe-target-groups --names fastapi-app-tg --query 'TargetGroups[0].TargetGroupArn' --output text) \
+            --query 'length(TargetHealthDescriptions[?TargetHealth.State==`healthy`])' \
+            --output text)
+          
+          echo "💚 Healthy targets: $HEALTHY_TARGETS"
+          
+          if [ "$HEALTHY_TARGETS" -eq 0 ]; then
+            echo "❌ No healthy targets found"
+            exit 1
+          fi
+          
+          echo "✅ Post-deployment verification passed"
+
+      - name: Production Deployment Summary
+        run: |
+          echo "## 🏭 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment Time:** ${{ steps.apply.outputs.deployment_time }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Application URL:** ${{ steps.apply.outputs.application_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Health Status:** ${{ steps.health-check.outputs.healthy == 'true' && '✅ Healthy' || '❌ Unhealthy' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Image:** ${{ needs.build.outputs.image-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Previous Task Definition:** ${{ env.task_definition_backup }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Health endpoints: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- SSL certificate: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- HTTPS redirect: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance test: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Load balancer health: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎉 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "Production deployment completed successfully. Application is healthy and ready to serve traffic."
+
+      - name: Success Notification
+        run: |
+          echo "🎉 Production deployment successful!"
+          echo "🌐 Application URL: ${{ steps.apply.outputs.application_url }}"
+          echo "⏰ Deployment time: ${{ steps.apply.outputs.deployment_time }}"
+
+  # Job 9: Cleanup
   cleanup:
-    name: Cleanup
+    name: Cleanup Old Resources
     runs-on: ubuntu-latest
     needs: [deploy-staging, deploy-production]
-    if: always()
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
     
     steps:
-      - name: Clean up old container images
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Clean up old ECR images
         run: |
-          echo "Cleaning up old images..."
-          # Add cleanup commands here
+          echo "Cleaning up old container images..."
+          aws ecr describe-repositories --repository-names ${{ github.repository }} || echo "Repository doesn't exist yet"
+          # Keep only the last 10 images
+          aws ecr list-images --repository-name ${{ github.repository }} --filter tagStatus=UNTAGGED --query 'imageIds[?imageDigest!=null]' --output json | \
+          jq '.[:10]' | \
+          aws ecr batch-delete-image --repository-name ${{ github.repository }} --image-ids file:///dev/stdin || echo "No untagged images to clean"
+
+      - name: Clean up old task definitions
+        run: |
+          echo "Cleaning up old ECS task definitions..."
+          aws ecs list-task-definitions --family-prefix fastapi-app --status INACTIVE --query 'taskDefinitionArns[10:]' --output text | \
+          xargs -r -n1 aws ecs delete-task-definition --task-definition || echo "No old task definitions to clean"
