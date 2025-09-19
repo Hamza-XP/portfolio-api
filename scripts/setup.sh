@@ -36,7 +36,8 @@ if ! aws sts get-caller-identity > /dev/null 2>&1; then
 fi
 
 # Create S3 bucket for Terraform state
-BUCKET_NAME="terraform-state-$(date +%s)-$(whoami)"
+# BUCKET_NAME="terraform-state-$(date +%s)-$(whoami)"
+BUCKET_NAME="portfolio-state-bucket"
 echo "🪣 Creating S3 bucket for Terraform state: $BUCKET_NAME"
 
 aws s3 mb "s3://$BUCKET_NAME" || echo "Bucket might already exist"
