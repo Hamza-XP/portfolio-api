@@ -45,8 +45,8 @@ aws s3api put-bucket-versioning \
     --versioning-configuration Status=Enabled
 
 # Update backend configuration files
-sed -i "s/your-terraform-state-bucket/$BUCKET_NAME/g" terraform/backend-config/*.hcl
-sed -i "s/your-terraform-state-bucket/$BUCKET_NAME/g" terraform/main.tf
+sed -i "s/portfolio-state-bucket/$BUCKET_NAME/g" terraform/backend-config/*.hcl
+sed -i "s/portfolio-state-bucket/$BUCKET_NAME/g" terraform/main.tf
 
 echo "✅ Setup completed!"
 echo "📝 Next steps:"
