@@ -9,7 +9,7 @@ terraform {
   }
   
   backend "s3" {
-    bucket = "your-terraform-state-bucket"
+    bucket = "portfolio-state-bucket"
     key    = "fastapi-app/terraform.tfstate"
     region = "us-east-1"
   }
