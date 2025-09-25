@@ -67,7 +67,7 @@ resource "aws_ecs_service" "app" {
     container_port   = var.container_port
   }
 
-  depends_on = [aws_lb_listener.app]
+  depends_on = [aws_lb_listener.app_https]
 
   tags = {
     Name        = "${var.project_name}-service"
