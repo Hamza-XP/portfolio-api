@@ -113,6 +113,7 @@ jobs:
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-tag: ${{ steps.meta.outputs.tags }}
+      image-single: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
     
     steps:
       - name: Checkout code
@@ -274,14 +275,17 @@ jobs:
       - name: Set image tag
         id: image-tag
         run: |
-          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
-          echo "Using image tag: $IMAGE_TAG"
-          {
-            echo 'image_tag<<EOF'
-            echo "$IMAGE_TAG"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+          echo "image_tag=${{ needs.build.outputs.image-single }}" >> $GITHUB_OUTPUT
 
+      - name: Debug image tag
+        run: |
+          echo "Container image from build job: ${{ needs.build.outputs.image-single }}"
+          echo "Container image from step: ${{ steps.image-tag.outputs.image_tag }}"
+
+      - name: Debug image tag
+        run: |
+          echo "Container image from build job: ${{ needs.build.outputs.image-tag }}"
+          echo "Container image from step: ${{ steps.image-tag.outputs.image_tag }}"
 
       - name: Terraform Init
         working-directory: terraform
@@ -408,14 +412,7 @@ jobs:
       - name: Set image tag
         id: image-tag
         run: |
-          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
-          echo "Using image tag: $IMAGE_TAG"
-          {
-            echo 'image_tag<<EOF'
-            echo "$IMAGE_TAG"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-
+          echo "image_tag=${{ needs.build.outputs.image-tag }}" >> $GITHUB_OUTPUT
 
       - name: Terraform Init
         working-directory: terraform
@@ -574,50 +571,21 @@ jobs:
             echo "🔭 No existing deployment found"
           fi
 
-      # - name: Terraform Apply
-      #   id: apply
-      #   working-directory: terraform
-      #   run: |
-      #     echo "🚀 Applying Terraform plan to staging..."
-      #     terraform apply -auto-approve staging.tfplan
-          
-      #     # Capture outputs
-      #     echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
-          
-      #     # Get application URL with retry logic
-      #     for i in {1..5}; do
-      #       APP_URL=$(terraform output -raw application_url 2>/dev/null || echo "")
-      #       if [ -n "$APP_URL" ]; then
-      #         echo "application_url=$APP_URL" >> $GITHUB_OUTPUT
-      #         break
-      #       fi
-      #       echo "⏳ Waiting for outputs... (attempt $i/5)"
-      #       sleep 10
-      #     done
       - name: Terraform Apply
         id: apply
         working-directory: terraform
         run: |
           echo "🚀 Applying Terraform plan to staging..."
-
-          # 👀 Run a fresh plan first to show any real errors in the log
-          echo "🔍 Running terraform plan for debug output..."
-          terraform plan -var-file=environments/staging.tfvars || {
-            echo "❌ terraform plan failed—see output above for details."
-            exit 1
-          }
-
-          # ✅ Apply the saved plan if the above succeeded
           terraform apply -auto-approve staging.tfplan
-
+          
           # Capture outputs
-          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-
+          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+          
           # Get application URL with retry logic
           for i in {1..5}; do
             APP_URL=$(terraform output -raw application_url 2>/dev/null || echo "")
             if [ -n "$APP_URL" ]; then
-              echo "application_url=$APP_URL" >> "$GITHUB_OUTPUT"
+              echo "application_url=$APP_URL" >> $GITHUB_OUTPUT
               break
             fi
             echo "⏳ Waiting for outputs... (attempt $i/5)"
