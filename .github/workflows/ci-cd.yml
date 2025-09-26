@@ -600,18 +600,17 @@ jobs:
         run: |
           echo "🚀 Applying Terraform plan to staging..."
 
-          # Apply the pre-generated plan
-          terraform apply -auto-approve staging.tfplan || {
-            echo "❌ terraform apply failed."
-            echo "🔍 Displaying terraform.log for details..."
-            # If you capture logs with TF_LOG, print them here
-            [ -f terraform.log ] && cat terraform.log
-            echo "🔍 Showing last 50 lines of stderr from terraform:"
-            tail -n 50 .terraform.tfstate.backup 2>/dev/null || true
+          # 👀 Run a fresh plan first to show any real errors in the log
+          echo "🔍 Running terraform plan for debug output..."
+          terraform plan -var-file=environments/staging.tfvars || {
+            echo "❌ terraform plan failed—see output above for details."
             exit 1
           }
 
-          # Capture outputs on success
+          # ✅ Apply the saved plan if the above succeeded
+          terraform apply -auto-approve staging.tfplan
+
+          # Capture outputs
           echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
           # Get application URL with retry logic
