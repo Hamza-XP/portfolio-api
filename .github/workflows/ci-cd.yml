@@ -574,21 +574,51 @@ jobs:
             echo "🔭 No existing deployment found"
           fi
 
+      # - name: Terraform Apply
+      #   id: apply
+      #   working-directory: terraform
+      #   run: |
+      #     echo "🚀 Applying Terraform plan to staging..."
+      #     terraform apply -auto-approve staging.tfplan
+          
+      #     # Capture outputs
+      #     echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+          
+      #     # Get application URL with retry logic
+      #     for i in {1..5}; do
+      #       APP_URL=$(terraform output -raw application_url 2>/dev/null || echo "")
+      #       if [ -n "$APP_URL" ]; then
+      #         echo "application_url=$APP_URL" >> $GITHUB_OUTPUT
+      #         break
+      #       fi
+      #       echo "⏳ Waiting for outputs... (attempt $i/5)"
+      #       sleep 10
+      #     done
       - name: Terraform Apply
         id: apply
         working-directory: terraform
         run: |
           echo "🚀 Applying Terraform plan to staging..."
-          terraform apply -auto-approve staging.tfplan
-          
-          # Capture outputs
-          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
-          
+
+          # Apply the pre-generated plan
+          terraform apply -auto-approve staging.tfplan || {
+            echo "❌ terraform apply failed."
+            echo "🔍 Displaying terraform.log for details..."
+            # If you capture logs with TF_LOG, print them here
+            [ -f terraform.log ] && cat terraform.log
+            echo "🔍 Showing last 50 lines of stderr from terraform:"
+            tail -n 50 .terraform.tfstate.backup 2>/dev/null || true
+            exit 1
+          }
+
+          # Capture outputs on success
+          echo "deployment_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
           # Get application URL with retry logic
           for i in {1..5}; do
             APP_URL=$(terraform output -raw application_url 2>/dev/null || echo "")
             if [ -n "$APP_URL" ]; then
-              echo "application_url=$APP_URL" >> $GITHUB_OUTPUT
+              echo "application_url=$APP_URL" >> "$GITHUB_OUTPUT"
               break
             fi
             echo "⏳ Waiting for outputs... (attempt $i/5)"
