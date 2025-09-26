@@ -1,0 +1,10 @@
+environment    = "staging"
+project_name   = "fastapi-app"
+aws_region     = "us-east-1"
+desired_count  = 1
+cpu            = 256
+memory         = 512
+domain_name    = "staging.hamza-qureshi.duckdns.org"
+domain_zone    = "duckdns.org"
+enable_ssl     = true
+enable_ipv6    = false

@@ -1,0 +1,11 @@
+environment    = "production"
+project_name   = "fastapi-app"
+aws_region     = "us-east-1"
+desired_count  = 2
+cpu            = 512
+memory         = 1024
+domain_name    = "hamza-qureshi.duckdns.org"
+domain_zone    = "duckdns.org"
+enable_ssl     = true
+enable_ipv6    = false
+ssl_policy     = "ELBSecurityPolicy-TLS-1-2-2017-01"
