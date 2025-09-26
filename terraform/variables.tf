@@ -27,15 +27,6 @@ variable "public_subnet_cidrs" {
   default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
-variable "vpc_id" {
-  description = "VPC ID where resources will be created"
-  type        = string
-}
-
-variable "public_subnet_ids" {
-  description = "List of public subnet IDs for the ALB"
-  type        = list(string)
-}
 
 variable "container_image" {
   description = "Docker container image"
