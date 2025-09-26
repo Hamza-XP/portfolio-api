@@ -221,8 +221,9 @@ crash.log
 crash.*.log
 
 # Variable files containing secrets
-*.tfvars
-*.tfvars.json
+# NOT NEEDED decause these do not contain SECRETS
+# *.tfvars
+# *.tfvars.json
 
 # Override files (for local changes not shared with team)
 override.tf
