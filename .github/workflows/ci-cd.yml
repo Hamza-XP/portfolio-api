@@ -682,19 +682,19 @@ jobs:
         working-directory: terraform
         run: |
           echo "🦆 Updating DuckDNS for staging..."
-          # Resolve the ALB DNS name to an IP address
-          ALB_IP=$(dig +short $(terraform output -raw load_balancer_dns) | tail -n1)
 
-          # Option 1: let DuckDNS auto-detect the public IP (recommended)
-          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}")
+          # Get the current ALB DNS name from Terraform outputs
+          ALB_DNS=$(terraform output -raw load_balancer_dns)
+          echo "ALB DNS: $ALB_DNS"
 
-          # Option 2: explicitly set the resolved IP (uncomment if preferred)
-          # RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=$ALB_IP")
+          # Ask DuckDNS to set a CNAME (using the 'txt' parameter)
+          RESPONSE=$(curl -s \
+            "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&txt=$ALB_DNS&clear=true")
 
           if [ "$RESPONSE" = "OK" ]; then
-            echo "✅ DuckDNS updated successfully"
+            echo "✅ DuckDNS CNAME updated successfully to $ALB_DNS"
           else
-            echo "⚠️ DuckDNS update response: $RESPONSE"
+            echo "⚠️ DuckDNS update failed, response: $RESPONSE"
           fi
         env:
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
@@ -975,19 +975,19 @@ jobs:
         working-directory: terraform
         run: |
           echo "🦆 Updating DuckDNS for production..."
-          # Resolve the ALB DNS name to an IP address
-          ALB_IP=$(dig +short $(terraform output -raw load_balancer_dns) | tail -n1)
 
-          # Option 1: let DuckDNS auto-detect the public IP (recommended)
-          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}")
+          # Get the current ALB DNS name from Terraform outputs
+          ALB_DNS=$(terraform output -raw load_balancer_dns)
+          echo "ALB DNS: $ALB_DNS"
 
-          # Option 2: explicitly set the resolved IP (uncomment if preferred)
-          # RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=$ALB_IP")
+          # Ask DuckDNS to set a CNAME (using the 'txt' parameter)
+          RESPONSE=$(curl -s \
+            "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&txt=$ALB_DNS&clear=true")
 
           if [ "$RESPONSE" = "OK" ]; then
-            echo "✅ DuckDNS updated successfully"
+            echo "✅ DuckDNS CNAME updated successfully to $ALB_DNS"
           else
-            echo "⚠️ DuckDNS update response: $RESPONSE"
+            echo "⚠️ DuckDNS update failed, response: $RESPONSE"
           fi
         env:
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
