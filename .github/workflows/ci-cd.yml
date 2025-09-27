@@ -412,13 +412,7 @@ jobs:
       - name: Set image tag
         id: image-tag
         run: |
-          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
-          echo "Using image tag: $IMAGE_TAG"
-          {
-            echo 'image_tag<<EOF'
-            echo "$IMAGE_TAG"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+          echo "image_tag=${{ needs.build.outputs.image-tag }}" >> $GITHUB_OUTPUT
 
       - name: Terraform Init
         working-directory: terraform
