@@ -682,12 +682,19 @@ jobs:
         working-directory: terraform
         run: |
           echo "🦆 Updating DuckDNS for staging..."
-          ALB_DNS=$(terraform output -raw load_balancer_dns)
-          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=${ALB_DNS}")
+          # Resolve the ALB DNS name to an IP address
+          ALB_IP=$(dig +short $(terraform output -raw load_balancer_dns) | tail -n1)
+
+          # Option 1: let DuckDNS auto-detect the public IP (recommended)
+          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}")
+
+          # Option 2: explicitly set the resolved IP (uncomment if preferred)
+          # RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=staging.hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=$ALB_IP")
+
           if [ "$RESPONSE" = "OK" ]; then
             echo "✅ DuckDNS updated successfully"
           else
-            echo "⚠️  DuckDNS update response: $RESPONSE"
+            echo "⚠️ DuckDNS update response: $RESPONSE"
           fi
         env:
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
@@ -968,12 +975,19 @@ jobs:
         working-directory: terraform
         run: |
           echo "🦆 Updating DuckDNS for production..."
-          ALB_DNS=$(terraform output -raw load_balancer_dns)
-          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=${ALB_DNS}")
+          # Resolve the ALB DNS name to an IP address
+          ALB_IP=$(dig +short $(terraform output -raw load_balancer_dns) | tail -n1)
+
+          # Option 1: let DuckDNS auto-detect the public IP (recommended)
+          RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}")
+
+          # Option 2: explicitly set the resolved IP (uncomment if preferred)
+          # RESPONSE=$(curl -s "https://www.duckdns.org/update?domains=hamza-qureshi&token=${{ secrets.DUCKDNS_TOKEN }}&ip=$ALB_IP")
+
           if [ "$RESPONSE" = "OK" ]; then
             echo "✅ DuckDNS updated successfully"
           else
-            echo "⚠️  DuckDNS update response: $RESPONSE"
+            echo "⚠️ DuckDNS update response: $RESPONSE"
           fi
         env:
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
