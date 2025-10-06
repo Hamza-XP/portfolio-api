@@ -9,6 +9,8 @@ A comprehensive, production-ready FastAPI application with complete CI/CD pipeli
 [![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![Security](https://img.shields.io/badge/Security-Scanning-28a745?logo=github&logoColor=white)](https://github.com/features/security)
 
+![Live Portfolio Screenshot](util/pf-ss.jpeg)
+
 ---
 ## 🏗️ Project Architecture
 
@@ -97,6 +99,28 @@ graph LR
 </table>
 
 ---
+## 🌐 CI/CD Pipeline Deep Dive
+
+### Pipeline Summary
+
+![CI/CD Workflow](util/pf-ci.png)
+
+### Detailed Stage Breakdown
+
+| Stage | Purpose | Tools | Triggers |
+|-------|---------|-------|----------|
+| **Code Quality** | Linting, formatting, security | Black, isort, flake8, bandit | Every push/PR |
+| **Testing** | Unit tests, coverage | pytest, coverage | Every push/PR |
+| **Build** | Multi-platform containers | Docker Buildx | Every push/PR |
+| **Security Scan** | Container vulnerabilities | Trivy | Non-PR pushes |
+| **Integration** | End-to-end testing | Docker Compose | Every push/PR |
+| **Terraform Plan** | Infrastructure preview | Terraform | develop/main branches |
+| **Deploy Staging** | Automatic staging deploy | Terraform Apply | develop branch |
+| **Deploy Production** | Production deployment | Terraform Apply | main branch |
+| **Cleanup** | Resource maintenance | AWS CLI | After deployments |
+
+
+---
 
 ## 📁 Project Structure
 
@@ -164,183 +188,10 @@ fastapi-production-platform/
     └── LICENSE                      # Project license
 ```
 
----
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-- **Docker** 20.10+ and Docker Compose
-- **AWS CLI** configured with appropriate permissions
-- **Terraform** 1.6+ installed locally
-- **Python** 3.11+ for local development
-
-### 1. 📥 Clone and Setup
-```bash
-# Clone the repository
-git clone https://github.com/your-username/fastapi-production-platform.git
-cd fastapi-production-platform
-
-# Run initial setup
-make setup
-chmod +x scripts/*.sh
-./scripts/setup.sh
-```
-
-### 2. ⚙️ Configure Environment
-```bash
-# Update Terraform variables
-vim terraform/environments/staging.tfvars
-vim terraform/environments/production.tfvars
-
-# Set up GitHub repository secrets (see Security Setup section)
-```
-
-### 3. 🏠 Local Development
-```bash
-# Build and run locally
-make build
-make run
-
-# Run tests
-make test
-
-# View application
-open http://localhost:8000
-```
-
-### 4. 🚀 Deploy to Cloud
-
-#### Automatic Deployment (Recommended)
-```bash
-# Deploy to staging
-git checkout -b develop
-git push origin develop
-
-# Deploy to production (requires approval)
-git checkout main
-git merge develop
-git push origin main
-```
-
-#### Manual Deployment
-```bash
-# Deploy to staging
-make deploy-staging
-
-# Deploy to production
-make deploy-production
-```
 
 ---
 
-## 🔧 Development Workflow
 
-### 🏠 Local Development
-The application supports hot-reloading for rapid development:
-
-```bash
-# Start development environment
-docker-compose up --build
-
-# Or use Make commands
-make run
-
-# Run with different profiles
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up
-```
-
-### 🧪 Testing Strategy
-Comprehensive testing at multiple levels:
-
-```bash
-# Run all tests with coverage
-make test
-
-# Run specific test types
-pytest tests/test_health.py -v
-pytest tests/integration/ -v
-
-# Generate coverage report
-pytest --cov=app --cov-report=html
-```
-
-### 📊 Monitoring and Debugging
-```bash
-# View application logs
-make logs-staging    # Staging environment
-make logs-production # Production environment
-
-# Check application health
-make health-check-staging
-make health-check-production
-
-# Monitor infrastructure
-aws ecs describe-services --cluster fastapi-app-cluster --services fastapi-app
-```
-
----
-
-## 🔒 Security Setup
-
-### 🔑 GitHub Repository Secrets
-Configure these secrets in `Settings > Secrets and variables > Actions`:
-
-```bash
-AWS_ACCESS_KEY_ID=AKIA...           # AWS programmatic access key
-AWS_SECRET_ACCESS_KEY=...           # AWS secret access key  
-DUCKDNS_TOKEN=...                   # DuckDNS token (optional)
-```
-
-### 🏛️ AWS IAM Configuration
-Create an IAM user with these permissions:
-- `AmazonECS_FullAccess`
-- `AmazonEC2FullAccess`
-- `ElasticLoadBalancingFullAccess`
-- `IAMFullAccess`
-- `CloudWatchFullAccess`
-- `AmazonS3FullAccess`
-
-### 🛡️ Security Features
-- **Vulnerability Scanning** - Trivy container scanning
-- **Code Security** - Bandit Python security linting
-- **Dependency Scanning** - Safety package vulnerability checks
-- **Automated Updates** - Dependabot security patches
-- **Secrets Management** - GitHub encrypted secrets
-- **Network Security** - VPC with security groups
-
----
-
-## 🌐 CI/CD Pipeline Deep Dive
-
-### Pipeline Stages Overview
-
-```mermaid
-flowchart LR
-    A[🔍 Code Quality] --> B[🧪 Testing]
-    B --> C[🏗️ Build]
-    C --> D[🛡️ Security Scan]
-    D --> E[⚗️ Integration]
-    E --> F[📋 Terraform Plan]
-    F --> G[🚀 Deploy Staging]
-    F --> H[🏭 Deploy Production]
-    H --> I[🧹 Cleanup]
-```
-
-### Detailed Stage Breakdown
-
-| Stage | Purpose | Tools | Triggers |
-|-------|---------|-------|----------|
-| **Code Quality** | Linting, formatting, security | Black, isort, flake8, bandit | Every push/PR |
-| **Testing** | Unit tests, coverage | pytest, coverage | Every push/PR |
-| **Build** | Multi-platform containers | Docker Buildx | Every push/PR |
-| **Security Scan** | Container vulnerabilities | Trivy | Non-PR pushes |
-| **Integration** | End-to-end testing | Docker Compose | Every push/PR |
-| **Terraform Plan** | Infrastructure preview | Terraform | develop/main branches |
-| **Deploy Staging** | Automatic staging deploy | Terraform Apply | develop branch |
-| **Deploy Production** | Production deployment | Terraform Apply | main branch |
-| **Cleanup** | Resource maintenance | AWS CLI | After deployments |
-
----
 
 ## 📊 Monitoring and Observability
 
@@ -442,6 +293,36 @@ TF_LOG=DEBUG terraform plan
 - Optimize container resource allocation
 - Use Application Load Balancer access logs
 - Implement caching strategies for static content
+
+---
+
+## 🔒 Security Setup
+
+### 🔑 GitHub Repository Secrets
+Configure these secrets in `Settings > Secrets and variables > Actions`:
+
+```bash
+AWS_ACCESS_KEY_ID=AKIA...           # AWS programmatic access key
+AWS_SECRET_ACCESS_KEY=...           # AWS secret access key  
+DUCKDNS_TOKEN=...                   # DuckDNS token (optional)
+```
+
+### 🏛️ AWS IAM Configuration
+Create an IAM user with these permissions:
+- `AmazonECS_FullAccess`
+- `AmazonEC2FullAccess`
+- `ElasticLoadBalancingFullAccess`
+- `IAMFullAccess`
+- `CloudWatchFullAccess`
+- `AmazonS3FullAccess`
+
+### 🛡️ Security Features
+- **Vulnerability Scanning** - Trivy container scanning
+- **Code Security** - Bandit Python security linting
+- **Dependency Scanning** - Safety package vulnerability checks
+- **Automated Updates** - Dependabot security patches
+- **Secrets Management** - GitHub encrypted secrets
+- **Network Security** - VPC with security groups
 
 ---
 
