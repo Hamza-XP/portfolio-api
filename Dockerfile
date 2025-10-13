@@ -1,5 +1,5 @@
 # Use a slim Python base image for reduced attack surface
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Set environment variables to improve performance and disable .pyc
 ENV PYTHONDONTWRITEBYTECODE=1
